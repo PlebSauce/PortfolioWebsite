@@ -4,8 +4,12 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"net/http"
 
 	"github.com/PlebSauce/PortfolioWebsite/cmd/server/config"
+	"github.com/PlebSauce/PortfolioWebsite/internal/app/handlers"
+	_ "github.com/lib/pq"
+	"github.com/redis/go-redis/v9"
 )
 
 func main() {
@@ -44,7 +48,7 @@ func setupDatabase(dbURL string) (*sql.DB, error) {
 	return db, nil
 }
 
-func setupRedis(redisURL string) (*redis.redisClientClient, error) {
+func setupRedis(redisURL string) (*redis.Client, error) {
 	// Implement Redis setup using a Redis client library (e.g., `go-redis`)
 	// Example:
 	redisClient := redis.NewClient(&redis.Options{
@@ -54,7 +58,7 @@ func setupRedis(redisURL string) (*redis.redisClientClient, error) {
 	})
 
 	// Test Redis connection
-	_, err := redisClient.Ping().Result()
+	_, err := redisClient.Ping( /*use context.TODO*/ nil).Result()
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to Redis: %w", err)
 	}
@@ -64,7 +68,18 @@ func setupRedis(redisURL string) (*redis.redisClientClient, error) {
 
 func startServer() {
 	// Implement server initialization (HTTP handlers, middleware setup, etc.)
-	// Example:
-	// router := setupRouter()
-	// http.ListenAndServe(":8080", router)
+	http.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.Dir("static/css"))))
+	http.Handle("/js/", http.StripPrefix("/js/", http.FileServer(http.Dir("static/js"))))
+
+	http.HandleFunc("/login", handlers.LoginHandler)
+	http.HandleFunc("/", handlers.MainscreenHandler)
+	http.HandleFunc("/aboutme", handlers.AboutMeHandler)
+	http.HandleFunc("/projects", handlers.ProjectsHandler)
+	http.HandleFunc("/contactandlinks", handlers.ContactHandler)
+	//http.HandleFunc("/mainscreen", handlers.MainScreenHandler)
+	// start server
+	if err := http.ListenAndServe(":8080", nil); err != nil {
+		fmt.Println("Server error:", err)
+	}
+
 }
