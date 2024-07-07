@@ -8,9 +8,14 @@ import (
 
 	"github.com/PlebSauce/PortfolioWebsite/cmd/server/config"
 	"github.com/PlebSauce/PortfolioWebsite/internal/app/handlers"
+	"github.com/PlebSauce/PortfolioWebsite/internal/database"
 	_ "github.com/lib/pq"
 	"github.com/redis/go-redis/v9"
 )
+
+type apiConfig struct {
+	DB *database.Queries
+}
 
 func main() {
 	cfg, err := config.LoadConfig()
@@ -23,6 +28,12 @@ func main() {
 		log.Fatalf("Error setting up database: %v", err)
 	}
 	defer db.Close()
+
+	queries := database.New(db)
+
+	apiCfg := apiConfig{
+		DB: queries,
+	}
 
 	// Initialize Redis connection (if applicable)
 	if cfg.RedisURL != "" {
