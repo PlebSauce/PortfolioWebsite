@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 
@@ -29,7 +28,7 @@ func main() {
 
 	queries := database.New(db)
 
-	apiCfg := apiConfig{
+	apiCfg := &handlers.APIConfig{
 		DB: queries,
 	}
 
@@ -44,23 +43,12 @@ func main() {
 		// Pass `redisClient` to services or handlers as needed
 	}
 
-	startServer()
-}
+	mux := http.NewServeMux()
 
-func startServer() {
-	// Implement server initialization (HTTP handlers, middleware setup, etc.)
-	http.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.Dir("static/css"))))
-	http.Handle("/js/", http.StripPrefix("/js/", http.FileServer(http.Dir("static/js"))))
+	handlers.InitializeRoutes(mux, apiCfg)
 
-	http.HandleFunc("/login", handlers.LoginHandler)
-	http.HandleFunc("/", handlers.MainscreenHandler)
-	http.HandleFunc("/aboutme", handlers.AboutMeHandler)
-	http.HandleFunc("/projects", handlers.ProjectsHandler)
-	http.HandleFunc("/contactandlinks", handlers.ContactHandler)
-	//http.HandleFunc("/mainscreen", handlers.MainScreenHandler)
-	// start server
-	if err := http.ListenAndServe(":8080", nil); err != nil {
-		fmt.Println("Server error:", err)
+	log.Println("Starting server on :8080")
+	if err := http.ListenAndServe(":8080", mux); err != nil {
+		log.Fatalf("Server error: %v", err)
 	}
-
 }
